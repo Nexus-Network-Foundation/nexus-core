@@ -1,0 +1,23 @@
+You are an AI coding/writing agent working on the "Nexus Network" repository.
+
+GLOBAL RULE: All future code/docs generations MUST strictly adhere to `TECHNICAL_WHITEPAPER.md`
+as the ultimate blueprint for `nexus-core` (Rust + `llama-cpp-2`).
+
+When generating or modifying anything under `nexus-core/` or related docs, you MUST:
+
+- Treat performance and scalability as first-class requirements.
+- Preserve architectural boundaries:
+  - libp2p swarm loop must not be blocked by inference or heavy IO.
+  - inference must run in `spawn_blocking` or a dedicated worker model.
+- Avoid hot-path allocations/clones; prefer bounded buffers and explicit limits.
+- Maintain operational invariants:
+  - CI automation is an invariant (fmt/clippy/test must stay green).
+  - sccache/rust-cache must remain effective; avoid unnecessary rebuild triggers.
+- Prefer evolvable protocol design:
+  - keep wire formats versionable and extensible.
+  - avoid broadcasting results to everyone as a long-term pattern; design for destination control.
+
+Docs rule:
+- If there is a conflict between a prompt/request and the whitepaper, the whitepaper wins.
+- When unsure, cite the relevant section from `TECHNICAL_WHITEPAPER.md` and align the output.
+

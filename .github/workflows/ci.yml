@@ -1,0 +1,131 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  autofix-format:
+    name: Auto-fix formatting (push only)
+    if: github.event_name == 'push' && github.actor != 'github-actions[bot]' && !contains(github.event.head_commit.message, '[skip ci]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install system deps (cmake, clang)
+        run: sudo apt-get update && sudo apt-get install -y cmake clang
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: cargo fmt
+        working-directory: nexus-core
+        run: cargo fmt --all
+
+      # Optional: apply safe-ish lint autofixes to reduce review noise.
+      # We keep this non-blocking: if clippy can't fix (or fails on some targets),
+      # the workflow still proceeds and at least formatting stays clean.
+      - name: cargo clippy --fix (non-blocking)
+        continue-on-error: true
+        working-directory: nexus-core
+        env:
+          RUSTFLAGS: ""
+        run: |
+          cargo clippy --fix --allow-dirty --allow-staged --locked --all-targets --all-features || true
+
+      - name: Commit formatting changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(fmt): auto-format [skip ci]"
+          branch: ${{ github.ref_name }}
+          file_pattern: |
+            *.rs
+            Cargo.toml
+            Cargo.lock
+            **/*.rs
+            **/Cargo.toml
+            **/Cargo.lock
+
+  ci-linux:
+    name: Build + test (Linux)
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]'))
+    runs-on: ubuntu-latest
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system deps (cmake, clang)
+        run: sudo apt-get update && sudo apt-get install -y cmake clang
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.8
+
+      # Caches Cargo registry + build artifacts between runs (complements sccache).
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            nexus-core -> target
+
+      - name: cargo build
+        working-directory: nexus-core
+        run: cargo build --locked
+
+      - name: cargo test
+        working-directory: nexus-core
+        run: cargo test --locked
+
+      - name: cargo clippy (deny warnings)
+        working-directory: nexus-core
+        run: cargo clippy --locked -- -D warnings
+
+  ci-macos-metal:
+    name: Build check (macOS + metal)
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]'))
+    runs-on: macos-latest
+    env:
+      RUSTC_WRAPPER: sccache
+      SCCACHE_GHA_ENABLED: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.8
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            nexus-core -> target
+
+      - name: cargo check --features metal
+        working-directory: nexus-core
+        run: cargo check --locked --features metal
+
