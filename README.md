@@ -52,6 +52,14 @@ NEXUS_GGUF_PATH=./models/llama-3-8b.gguf cargo run --release --features metal
 
 ---
 
+## REST API（PoC / 外部統合）
+
+Client ノードは `axum` で簡易 REST API を提供します。ブラウザ/モバイルから使うために **CORS** と **API Key**（`X-API-KEY`）による最低限の防御を入れています。
+
+- **API ドキュメント**: `DOCS/API.md`
+
+---
+
 ## Architecture Visualized
 
 ```mermaid
