@@ -1,0 +1,11 @@
+.DS_Store
+*.log
+
+# Demo / local state
+nexus.db
+nexus.db-*
+client.log
+seed.log
+
+# Safety: keep local terminals/config out of git
+.cursor/
