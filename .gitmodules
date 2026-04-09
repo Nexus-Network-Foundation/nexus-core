@@ -1,0 +1,3 @@
+[submodule "nexus-core"]
+	path = nexus-core
+	url = https://github.com/Ai0090/nexus-core.git

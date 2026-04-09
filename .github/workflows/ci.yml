@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: recursive
 
       - name: Install system deps (cmake, clang)
         run: sudo apt-get update && sudo apt-get install -y cmake clang
@@ -71,6 +72,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install system deps (cmake, clang)
         run: sudo apt-get update && sudo apt-get install -y cmake clang
@@ -112,6 +115,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install system deps (cmake)
+        run: brew update && brew install cmake
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
