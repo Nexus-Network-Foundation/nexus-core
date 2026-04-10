@@ -209,3 +209,21 @@ After `gh auth login`, maintainers can bulk-create them with the script in that 
 ## From the Founder
 
 I am a 15-year-old developer. I built Nexus Network because I believe AI inference should be a public good—protected by math, verified by code, and owned by no one. We are moving from a world of "Don't be evil" to "Can't be evil".
+
+---
+
+## Roadmap
+
+Nexus is designed to compound: each release should make the network **harder to cheat, easier to operate, and more credibly neutral**. The next chapters are organized around three pillars.
+
+### Verifiable computation (ZK-based AI)
+
+Today, honest behavior is encouraged through **reputational signals**, sampling, and economic penalties in the PoC. The long-term goal is **trust-minimized inference**: move from “we trust this operator” to “anyone can verify this output,” using **zkML**, **fraud proofs**, and related **opML-style** dispute mechanisms. The objective is cryptographic assurance that a claimed model produced a claimed output under agreed constraints—without requiring users to trust a single vendor or jurisdiction.
+
+### On-chain economic security
+
+The economic layer will graduate from local ledgers and audit trails to **programmable security on Ethereum and L2s**: **real staking**, transparent rules, and **automated slashing** tied to verifiable faults. On-chain integration should align incentives with verification depth, make misbehavior costly at scale, and provide a credible path from research PoC to **open, composable infrastructure** the ecosystem can build on.
+
+### Heterogeneous node orchestration
+
+Inference is not homogeneous. The network needs an **intelligent scheduler** that routes work across **GPUs, VRAM budgets, and bandwidth** profiles—optimizing for latency, cost, and verification policy per task. The aim is production-grade orchestration: predictable capacity, fair queuing, and routing that improves as the mesh grows, rather than a one-size-fits-all dispatch model.
