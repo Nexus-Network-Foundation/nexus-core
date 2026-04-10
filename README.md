@@ -1,5 +1,7 @@
 # Nexus Network: The Sovereign Infrastructure for Verified AI.
 
+[![Discord](https://img.shields.io/badge/Discord-Join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/Ay3EcSBRan)
+
 **Decentralized inference with privacy, integrity, and portable operations — not another black-box API.**
 
 Nexus routes AI workloads across independent nodes using **Rust**, **libp2p**, and **llama.cpp** (`llama-cpp-2`). Apple Silicon can use **Metal**; Linux deployments can use **Docker** and optional **NVIDIA** GPUs for executors.
