@@ -1,0 +1,79 @@
+services:
+  seed:
+    build:
+      context: ./nexus-core
+      dockerfile: Dockerfile
+    environment:
+      - NEXUS_MODE=SEED
+      - NEXUS_MODEL_ID=${NEXUS_MODEL_ID}
+      - NEXUS_E2EE=${NEXUS_E2EE}
+      - NEXUS_DB_PATH=/data/nexus.db
+      - NEXUS_GGUF_PATH=/models/${NEXUS_GGUF_FILE}
+    volumes:
+      - ./nexus-core/models:/models:ro
+      - seed_data:/data
+    ports:
+      - "50001:50001"
+
+  executor:
+    build:
+      context: ./nexus-core
+      dockerfile: Dockerfile
+    depends_on:
+      - seed
+    environment:
+      - NEXUS_MODE=CLIENT
+      - NEXUS_ENABLE_REST=false
+      - NEXUS_SEED_HOST=seed
+      - NEXUS_SEED_PORT=50001
+      - NEXUS_MODEL_ID=${NEXUS_MODEL_ID}
+      - NEXUS_E2EE=${NEXUS_E2EE}
+      - NEXUS_DB_PATH=/data/nexus.db
+      - NEXUS_GGUF_PATH=/models/${NEXUS_GGUF_FILE}
+      - NEXUS_DISABLE_REPL=true
+    volumes:
+      - ./nexus-core/models:/models:ro
+      - executor_data:/data
+    # Optional NVIDIA GPU support (requires NVIDIA Container Toolkit):
+    # - run with: docker compose --profile gpu up --build
+    profiles: ["gpu"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  client:
+    build:
+      context: ./nexus-core
+      dockerfile: Dockerfile
+    depends_on:
+      - seed
+      - executor
+    environment:
+      - NEXUS_MODE=CLIENT
+      - NEXUS_ENABLE_REST=true
+      - NEXUS_REST_LISTEN=0.0.0.0:8080
+      - NEXUS_SEED_HOST=seed
+      - NEXUS_SEED_PORT=50001
+      - NEXUS_MODEL_ID=${NEXUS_MODEL_ID}
+      - NEXUS_E2EE=${NEXUS_E2EE}
+      - NEXUS_DB_PATH=/data/nexus.db
+      - NEXUS_GGUF_PATH=/models/${NEXUS_GGUF_FILE}
+      - NEXUS_API_KEY=${NEXUS_API_KEY}
+      - NEXUS_VERIFICATION_RATE=1.0
+      - NEXUS_REST_TIMEOUT_SECS=300
+      - NEXUS_DISABLE_REPL=true
+    volumes:
+      - ./nexus-core/models:/models:ro
+      - client_data:/data
+    ports:
+      - "8080:8080"
+
+volumes:
+  seed_data:
+  executor_data:
+  client_data:
+

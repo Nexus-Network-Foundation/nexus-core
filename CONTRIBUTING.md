@@ -7,6 +7,11 @@
 - **ホットパスの不要な alloc/clone を避ける**
 - **CI（fmt/clippy/test）を常にグリーンに保つ**
 
+補助ドキュメント:
+
+- **WHITE_PAPER.md** — 投資家・パートナー向けの全体像（実装の最終設計図は引き続き `TECHNICAL_WHITEPAPER.md`）
+- **整合性（スラッシング）デモ** — `README.md` の「Test the Integrity」（`NEXUS_SIMULATE_FRAUD=1`）
+
 ---
 
 ## Quick Start（Issue #18: 品質検証デモ）

@@ -9,3 +9,8 @@ seed.log
 
 # Safety: keep local terminals/config out of git
 .cursor/
+
+# Local secrets and keys (never commit)
+.env
+.env.*
+*_p2p_key.bin

@@ -73,6 +73,8 @@ echo "[bootstrap] starting SEED in background..."
   export NEXUS_MODE="SEED"
   export NEXUS_DB_PATH="${ROOT_DIR}/nexus.db"
   export NEXUS_MODEL_ID="${MODEL_ID}"
+  export NEXUS_AUDIT_PATH="${ROOT_DIR}/nexus_audit.log"
+  export NEXUS_P2P_KEY_PATH="${ROOT_DIR}/seed_p2p_key.bin"
   "${CARGO_BIN}" run --quiet
 ) >"${SEED_LOG}" 2>&1 &
 SEED_PID=$!
@@ -88,6 +90,9 @@ echo "[bootstrap] starting CLIENT in background (REST enabled)..."
   export NEXUS_DB_PATH="${ROOT_DIR}/nexus.db"
   export NEXUS_API_KEY="${API_KEY}"
   export NEXUS_MODEL_ID="${MODEL_ID}"
+  export NEXUS_AUDIT_PATH="${ROOT_DIR}/nexus_audit.log"
+  export NEXUS_P2P_KEY_PATH="${ROOT_DIR}/client_p2p_key.bin"
+  export NEXUS_SIMULATE_FRAUD="${NEXUS_SIMULATE_FRAUD:-0}"
   export NEXUS_VERIFICATION_RATE="${VERIFICATION_RATE}"
   export NEXUS_REST_LISTEN="${REST_LISTEN}"
   export NEXUS_REST_TIMEOUT_SECS="${REST_TIMEOUT_SECS}"
@@ -122,6 +127,12 @@ echo "${RESP}"
 
 CONTENT="$(echo "${RESP}" | jq -r '.choices[0].message.content // empty')"
 STATUS="$(echo "${RESP}" | jq -r '.metadata.verification_status // empty')"
+BALA="$(echo "${RESP}" | jq -r '.metadata.virtual_balance // empty')"
+
+EXPECT_STATUS="${NEXUS_EXPECT_VERIFICATION_STATUS:-verified}"
+if [[ "${NEXUS_SIMULATE_FRAUD:-0}" == "1" ]]; then
+  EXPECT_STATUS="${NEXUS_EXPECT_VERIFICATION_STATUS:-failed}"
+fi
 
 if [[ -z "${CONTENT}" ]]; then
   echo "[bootstrap] ERROR: response missing choices[0].message.content" >&2
@@ -131,12 +142,12 @@ if [[ "${CONTENT}" == *"ModelNotFound"* ]]; then
   echo "[bootstrap] ERROR: ModelNotFound returned (check NEXUS_MODEL_ID / model routing)" >&2
   exit 1
 fi
-if [[ "${STATUS}" != "verified" ]]; then
-  echo "[bootstrap] ERROR: verification_status != verified (got='${STATUS}')" >&2
+if [[ "${STATUS}" != "${EXPECT_STATUS}" ]]; then
+  echo "[bootstrap] ERROR: verification_status != ${EXPECT_STATUS} (got='${STATUS}')" >&2
   exit 1
 fi
 
 echo
-echo "[bootstrap] OK: content is non-ModelNotFound and verification_status=verified"
+echo "[bootstrap] OK: content is non-ModelNotFound and verification_status=${STATUS} balance=${BALA}"
 echo "[bootstrap] logs: ${SEED_LOG} ${CLIENT_LOG}"
 

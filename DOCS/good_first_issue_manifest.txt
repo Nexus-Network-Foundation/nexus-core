@@ -1,0 +1,5 @@
+Implement Prometheus metrics for nexus-core|DOCS/issues/01-prometheus-metrics.md
+Add Web UI dashboard for node health and verification stats|DOCS/issues/02-web-ui-dashboard.md
+Add /healthz and /readyz HTTP endpoints|DOCS/issues/03-health-readiness.md
+Publish OpenAPI 3.0 spec for REST API|DOCS/issues/04-openapi-spec.md
+CLI: parse and filter nexus_audit.log (JSONL)|DOCS/issues/05-audit-log-cli.md
