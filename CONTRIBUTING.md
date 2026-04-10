@@ -1,81 +1,128 @@
 # Contributing to Nexus Network
 
-このリポジトリは “動くPoC” を **外部コラボが安全に拡張できる実装基盤**へ進化させる段階にあります。  
-`TECHNICAL_WHITEPAPER.md` を **最優先の設計図**として扱い、特に次の不変条件を守ってください。
+Nexus Network is building the future of **“Can’t be evil” AI**: inference that becomes trustworthy not by promises, but by **cryptography, verification, and incentives**. If you want to help shape sovereign infrastructure for verified AI, you are welcome here.
 
-- **Swarm（libp2p）をブロックしない**: 推論/重いI/Oは必ず `spawn_blocking` または専用ワーカーへ
-- **ホットパスの不要な alloc/clone を避ける**
-- **CI（fmt/clippy/test）を常にグリーンに保つ**
+This repository is an evolving PoC intended to become a **safe, scalable implementation platform** for external contributors. The non-negotiable source of truth for `nexus-core` architecture and invariants is [`TECHNICAL_WHITEPAPER.md`](TECHNICAL_WHITEPAPER.md).
 
-補助ドキュメント:
+Related reading:
 
-- **WHITE_PAPER.md** — 投資家・パートナー向けの全体像（実装の最終設計図は引き続き `TECHNICAL_WHITEPAPER.md`）
-- **整合性（スラッシング）デモ** — `README.md` の「Test the Integrity」（`NEXUS_SIMULATE_FRAUD=1`）
+- [`WHITE_PAPER.md`](WHITE_PAPER.md): Vision, architecture narrative, and roadmap (partner/investor-facing)
+- [`README.md`](README.md): Quick start, Docker, and “Test the Integrity” tutorial (including `NEXUS_SIMULATE_FRAUD=1`)
+- [`DOCS/GOOD_FIRST_ISSUES.md`](DOCS/GOOD_FIRST_ISSUES.md): Ready-to-file issues for new contributors
 
 ---
 
-## Quick Start（Issue #18: 品質検証デモ）
+## Welcome
 
-依存:
-- `cargo`
-- `curl`
-- `jq`
+Contributions that make Nexus **more verifiable, more private, and more operable** are especially valuable. Areas that matter early:
 
-実行（Seed→安定化→Client→REST→`verification_status=verified` を検証）:
+- Strong integrity signals (verification rigor, evidence, auditability)
+- Privacy-by-design (E2EE, key management, least-knowledge routing)
+- Production readiness (metrics, tracing, health probes, predictable resource usage)
+
+---
+
+## Development setup
+
+### Prerequisites
+
+- **Rust** (stable): `rustup` recommended
+- **CMake**: required because `llama-cpp-2` builds llama.cpp from source
+  - macOS: `brew install cmake`
+  - Linux: `apt/yum/pacman` equivalent
+- Optional: Docker / Docker Compose for multi-node demos
+
+### Build and run `nexus-core`
+
+From the repository root:
+
+```bash
+cd nexus-core
+cargo build --release
+```
+
+Apple Silicon (Metal acceleration), if you have it enabled in your environment:
+
+```bash
+cd nexus-core
+cargo run --release --features metal -- --server
+```
+
+### Run the end-to-end demo
+
+From the repository root:
 
 ```bash
 ./scripts/bootstrap.sh
 ```
 
-互換（旧スクリプト名）:
+Legacy wrapper:
 
 ```bash
 ./demo.sh
 ```
 
-環境変数（必要に応じて上書き）:
-- `NEXUS_GGUF_PATH`: GGUFモデルパス（推奨: `nexus-core/models/...`）
-- `NEXUS_MODEL_ID`: モデルID（デモ既定: `nexus-infer-v1`）
-- `NEXUS_REST_LISTEN`: REST bind（既定: `127.0.0.1:8080`）
-- `NEXUS_API_KEY`: REST API key（既定: `steve-secret-key`）
-- `NEXUS_VERIFICATION_RATE`: Double-check サンプリング率（既定: `1.0`）
+### Common environment variables
+
+- `NEXUS_GGUF_PATH`: GGUF model path (recommended under `nexus-core/models/...`)
+- `NEXUS_MODEL_ID`: model identifier (demo default: `nexus-infer-v1`)
+- `NEXUS_REST_LISTEN`: REST bind address (default: `127.0.0.1:8080`)
+- `NEXUS_API_KEY`: REST API key
+- `NEXUS_VERIFICATION_RATE`: verification sampling rate (default: `1.0`)
 
 ---
 
-## Code Map（どこに何があるか）
+## Coding standards (non-negotiables)
 
-PoC は境界を分けてスケール可能にする方針です（`TECHNICAL_WHITEPAPER.md` 準拠）。
+In addition to idiomatic Rust, Nexus has architectural constraints that protect scalability and correctness. These are enforced by policy, review, and CI.
 
-- **P2P / Swarm ループ**: `nexus-core/src/network.rs`
-  - request/response（タスク提出/結果配送）
-  - gossipsub（トピック購読/イベント処理）
-  - slashing（ban + evidence永続化）周辺
-- **推論ワーカー（llama.cpp）**: `nexus-core/src/inference_worker.rs`
-  - **GGUFを1回ロードして context を再利用**
-  - Swarm と推論の分離（`spawn_blocking`）
-- **署名/検証（Ed25519）**: `nexus-core/src/signing.rs`
-  - `InferenceResult` 署名付与と検証
-- **Tiering/統計**: `nexus-core/src/tiering.rs`, `nexus-core/src/stats.rs`
-  - ノード評価、スケジューリングの材料
-- **REST API**: `nexus-core/src/rest.rs`
-  - `POST /v1/chat/completions`
-  - `metadata.verification_status` の付与（Optimistic Verification）
+- **Do not block the libp2p swarm loop**: inference and heavy I/O must run in `spawn_blocking` or a dedicated worker model.
+- **Avoid hot-path allocations and clones**: prefer bounded buffers, explicit limits, and predictable memory.
+- **Keep CI green**: `cargo fmt`, `cargo clippy --all-targets --all-features -D warnings`, `cargo test`.
+- **Respect security invariants**: E2EE should not leak plaintext prompts; integrity checks must remain verifiable and auditable.
+
+If you are unsure whether a change violates an invariant, defer to [`TECHNICAL_WHITEPAPER.md`](TECHNICAL_WHITEPAPER.md) and align the implementation accordingly.
 
 ---
 
-## Dev Workflow
+## Contribution flow
 
-ローカルで基本チェック:
+1. **Fork** the repository on GitHub.
+2. Create a **feature branch** from `main`:
 
 ```bash
-cd nexus-core
+git checkout -b feat/<short-topic>
+```
+
+3. Make changes with a tight scope and add/adjust docs where helpful.
+4. Run local checks (from `nexus-core/`):
+
+```bash
 cargo fmt
 cargo clippy --all-targets --all-features -D warnings
 cargo test
 ```
 
-パフォーマンス/境界の注意:
-- **Swarm の select loop** を重くしない（DBや推論は別スレッド/別ワーカー）
-- 大量ログや巨大JSONの常時生成を避ける（必要な時だけ）
-- bounded channel / 明示的な上限を維持する
+5. Open a **Pull Request** with:
+   - A short architectural summary (“what and why”)
+   - A test plan (commands you ran)
+   - Notes on performance / hot-path impact if relevant
+
+---
+
+## Community
+
+For technical discussion, design debates, and contributor support, join Discord:
+
+- `https://discord.gg/Ay3EcSBRan`
+
+---
+
+## Good first issues
+
+If you’re new to the codebase, start here:
+
+- [`DOCS/GOOD_FIRST_ISSUES.md`](DOCS/GOOD_FIRST_ISSUES.md)
+
+These issues are curated to be self-contained, high-impact, and aligned with Nexus’s core invariants (privacy, integrity, and operability).
 
