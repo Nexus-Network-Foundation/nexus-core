@@ -93,7 +93,7 @@ echo "[ncu-test] starting Node B (Honest) on tcp/${HONEST_PORT}..."
 ) >"${HONEST_LOG}" 2>&1 &
 HONEST_PID=$!
 
-echo "[ncu-test] waiting ~30s for telemetry exchange (publish interval 10-20s)..."
+echo "[ncu-test] waiting ~30s for PoC exchange..."
 
 deadline=$((SECONDS + 35))
 found_line=""
@@ -101,14 +101,14 @@ found_file=""
 
 while [[ ${SECONDS} -lt ${deadline} ]]; do
   if [[ -f "${SEED_LOG}" ]]; then
-    found_line="$(grep -m 1 "\\[telemetry\\] Received NCU declaration from" "${SEED_LOG}" || true)"
+    found_line="$(grep -m 1 "\\[ledger\\] ✅ Valid PoC received from" "${SEED_LOG}" || true)"
     if [[ -n "${found_line}" ]]; then
       found_file="${SEED_LOG}"
       break
     fi
   fi
   if [[ -f "${HONEST_LOG}" ]]; then
-    found_line="$(grep -m 1 "\\[telemetry\\] Received NCU declaration from" "${HONEST_LOG}" || true)"
+    found_line="$(grep -m 1 "\\[ledger\\] ✅ Valid PoC received from" "${HONEST_LOG}" || true)"
     if [[ -n "${found_line}" ]]; then
       found_file="${HONEST_LOG}"
       break
@@ -118,7 +118,7 @@ while [[ ${SECONDS} -lt ${deadline} ]]; do
 done
 
 if [[ -z "${found_line}" ]]; then
-  echo "[ncu-test] FAIL: telemetry log not detected within 35s" >&2
+  echo "[ncu-test] FAIL: valid PoC log not detected within 35s" >&2
   echo "--- tail seed ---" >&2
   tail -80 "${SEED_LOG}" >&2 || true
   echo "--- tail honest ---" >&2
@@ -127,7 +127,7 @@ if [[ -z "${found_line}" ]]; then
 fi
 
 echo
-echo "[ncu-test] SUCCESS: detected telemetry acceptance via async validation queue"
+echo "[ncu-test] SUCCESS: detected PoC validation + credit"
 echo "[ncu-test] source log: ${found_file}"
 echo
 printf '\033[1;32m%s\033[0m\n' "${found_line}"

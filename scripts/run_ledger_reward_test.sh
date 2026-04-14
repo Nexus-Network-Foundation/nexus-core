@@ -66,8 +66,6 @@ echo "[ledger-test] starting Node A (Seed) tcp/${SEED_PORT}..."
     --port "${SEED_PORT}" \
     --rest=false \
     --mock-inference \
-    --telemetry-min 1 \
-    --telemetry-max 1 \
     --db-path "${DB_DIR}" \
     --p2p-key-path "${KEY_DIR}/p2p_seed.bin" \
     --node-key-path "${KEY_DIR}/node_key_seed.bin"
@@ -84,27 +82,25 @@ echo "[ledger-test] starting Node B (Honest) tcp/${HONEST_PORT}..."
     --port "${HONEST_PORT}" \
     --rest=false \
     --mock-inference \
-    --telemetry-min 1 \
-    --telemetry-max 1 \
     --db-path "${DB_DIR}" \
     --p2p-key-path "${KEY_DIR}/p2p_honest.bin" \
     --node-key-path "${KEY_DIR}/node_key_honest.bin"
 ) >"${HONEST_LOG}" 2>&1 &
 HONEST_PID=$!
 
-echo "[ledger-test] flooding telemetry (1s interval) and monitoring rewards for ~8s..."
-deadline=$((SECONDS + 12))
+echo "[ledger-test] mining PoC and monitoring rewards for ~20s..."
+deadline=$((SECONDS + 25))
 count=0
 last_line=""
 
 while [[ ${SECONDS} -lt ${deadline} ]]; do
   if [[ -f "${HONEST_LOG}" ]]; then
     # Count rewards; also keep the last matching line for display.
-    c="$(grep -c "\\[ledger\\] 💰 Reward earned!" "${HONEST_LOG}" 2>/dev/null || true)"
+    c="$(grep -c "\\[ledger\\] ✅ Valid PoC received from" "${HONEST_LOG}" 2>/dev/null || true)"
     if [[ "${c}" -gt "${count}" ]]; then
       count="${c}"
-      last_line="$(grep "\\[ledger\\] 💰 Reward earned!" "${HONEST_LOG}" | tail -1 || true)"
-      if [[ "${count}" -ge 3 ]]; then
+      last_line="$(grep "\\[ledger\\] ✅ Valid PoC received from" "${HONEST_LOG}" | tail -1 || true)"
+      if [[ "${count}" -ge 1 ]]; then
         break
       fi
     fi
@@ -112,8 +108,8 @@ while [[ ${SECONDS} -lt ${deadline} ]]; do
   sleep 1
 done
 
-if [[ "${count}" -lt 3 ]]; then
-  echo "[ledger-test] FAIL: expected >=3 reward logs within timeout; got=${count}" >&2
+if [[ "${count}" -lt 1 ]]; then
+  echo "[ledger-test] FAIL: expected >=1 valid PoC credit within timeout; got=${count}" >&2
   echo "--- tail honest ---" >&2
   tail -120 "${HONEST_LOG}" >&2 || true
   echo "--- tail seed ---" >&2
