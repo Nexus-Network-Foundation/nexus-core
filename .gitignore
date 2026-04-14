@@ -8,6 +8,7 @@ client.log
 seed.log
 .test_adversarial_logs/
 .test_ncu_telemetry/
+.test_identity_ban/
 
 # Safety: keep local terminals/config out of git
 .cursor/
