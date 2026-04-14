@@ -6,8 +6,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CORE_DIR="${ROOT_DIR}/nexus-core"
 KEY_DIR="${ROOT_DIR}/.test_ncu_telemetry"
 
-SEED_PORT="${NEXUS_SEED_PORT:-50431}"
-HONEST_PORT="${NEXUS_HONEST_PORT:-50434}"
+SEED_PORT="50001"
+HONEST_PORT="50002"
 
 SEED_LOG="${ROOT_DIR}/.test_ledger_seed.log"
 HONEST_LOG="${ROOT_DIR}/.test_ledger_honest.log"
@@ -58,16 +58,15 @@ trap cleanup EXIT
 echo "[ledger-test] starting Node A (Seed) tcp/${SEED_PORT}..."
 (
   cd "${CORE_DIR}"
-  export NEXUS_MODE="SEED"
-  export NEXUS_SEED_PORT="${SEED_PORT}"
-  export NEXUS_ENABLE_REST="0"
-  export NEXUS_DISABLE_REPL="1"
-  export NEXUS_MOCK_INFERENCE="1"
-  export NEXUS_TELEMETRY_INTERVAL_MIN_SECS="1"
-  export NEXUS_TELEMETRY_INTERVAL_MAX_SECS="1"
-  export NEXUS_P2P_KEY_PATH="${KEY_DIR}/p2p_seed.bin"
-  export NEXUS_NODE_KEY_PATH="${KEY_DIR}/node_key_seed.bin"
-  cargo run --release -q
+  cargo run --release -q -- \
+    --mode seed \
+    --port "${SEED_PORT}" \
+    --rest=false \
+    --mock-inference \
+    --telemetry-min 1 \
+    --telemetry-max 1 \
+    --p2p-key-path "${KEY_DIR}/p2p_seed.bin" \
+    --node-key-path "${KEY_DIR}/node_key_seed.bin"
 ) >"${SEED_LOG}" 2>&1 &
 SEED_PID=$!
 
@@ -76,17 +75,15 @@ sleep 3
 echo "[ledger-test] starting Node B (Honest) tcp/${HONEST_PORT}..."
 (
   cd "${CORE_DIR}"
-  export NEXUS_MODE="CLIENT"
-  export NEXUS_SEED_PORT="${SEED_PORT}"
-  export NEXUS_CLIENT_LISTEN_PORT="${HONEST_PORT}"
-  export NEXUS_ENABLE_REST="0"
-  export NEXUS_DISABLE_REPL="1"
-  export NEXUS_MOCK_INFERENCE="1"
-  export NEXUS_TELEMETRY_INTERVAL_MIN_SECS="1"
-  export NEXUS_TELEMETRY_INTERVAL_MAX_SECS="1"
-  export NEXUS_P2P_KEY_PATH="${KEY_DIR}/p2p_honest.bin"
-  export NEXUS_NODE_KEY_PATH="${KEY_DIR}/node_key_honest.bin"
-  cargo run --release -q
+  cargo run --release -q -- \
+    --mode client \
+    --port "${HONEST_PORT}" \
+    --rest=false \
+    --mock-inference \
+    --telemetry-min 1 \
+    --telemetry-max 1 \
+    --p2p-key-path "${KEY_DIR}/p2p_honest.bin" \
+    --node-key-path "${KEY_DIR}/node_key_honest.bin"
 ) >"${HONEST_LOG}" 2>&1 &
 HONEST_PID=$!
 

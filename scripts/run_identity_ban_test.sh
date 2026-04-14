@@ -7,8 +7,8 @@ CORE_DIR="${ROOT_DIR}/nexus-core"
 KEY_SRC="${ROOT_DIR}/.test_pqc_queue"
 KEY_DIR="${ROOT_DIR}/.test_identity_ban"
 
-HONEST_PORT="${NEXUS_HONEST_PORT:-50631}"
-ADV_PORT="${NEXUS_ADV_PORT:-50632}"
+HONEST_PORT="50001"
+ADV_PORT="50002"
 
 HONEST_LOG="${ROOT_DIR}/.test_identity_honest.log"
 ADV_LOG="${ROOT_DIR}/.test_identity_adv.log"
@@ -63,14 +63,13 @@ trap cleanup EXIT
 echo "[identity-test] starting Node A (Honest) listening tcp/${HONEST_PORT}..."
 (
   cd "${CORE_DIR}"
-  export NEXUS_MODE="SEED"
-  export NEXUS_SEED_PORT="${HONEST_PORT}"
-  export NEXUS_ENABLE_REST="0"
-  export NEXUS_DISABLE_REPL="1"
-  export NEXUS_MOCK_INFERENCE="1"
-  export NEXUS_P2P_KEY_PATH="${KEY_DIR}/p2p_seed.bin"
-  export NEXUS_NODE_KEY_PATH="${KEY_DIR}/node_key_seed.bin"
-  cargo run --release -q -- --server
+  cargo run --release -q -- \
+    --mode seed \
+    --port "${HONEST_PORT}" \
+    --rest=false \
+    --mock-inference \
+    --p2p-key-path "${KEY_DIR}/p2p_seed.bin" \
+    --node-key-path "${KEY_DIR}/node_key_seed.bin"
 ) >"${HONEST_LOG}" 2>&1 &
 HONEST_PID=$!
 
@@ -79,17 +78,14 @@ sleep 3
 echo "[identity-test] starting Node B (Adversarial) dialing Node A with bad handshake..."
 (
   cd "${CORE_DIR}"
-  export NEXUS_MODE="CLIENT"
-  export NEXUS_SEED_HOST="127.0.0.1"
-  export NEXUS_SEED_PORT="${HONEST_PORT}"
-  export NEXUS_CLIENT_LISTEN_PORT="${ADV_PORT}"
-  export NEXUS_FORCE_BAD_HANDSHAKE="1"
-  export NEXUS_ENABLE_REST="0"
-  export NEXUS_DISABLE_REPL="1"
-  export NEXUS_MOCK_INFERENCE="1"
-  export NEXUS_P2P_KEY_PATH="${KEY_DIR}/p2p_adv.bin"
-  export NEXUS_NODE_KEY_PATH="${KEY_DIR}/node_key_adv.bin"
-  cargo run --release -q
+  cargo run --release -q -- \
+    --mode client \
+    --port "${ADV_PORT}" \
+    --rest=false \
+    --mock-inference \
+    --bad-handshake \
+    --p2p-key-path "${KEY_DIR}/p2p_adv.bin" \
+    --node-key-path "${KEY_DIR}/node_key_adv.bin"
 ) >"${ADV_LOG}" 2>&1 &
 ADV_PID=$!
 

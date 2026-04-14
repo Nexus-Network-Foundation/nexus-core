@@ -6,8 +6,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CORE_DIR="${ROOT_DIR}/nexus-core"
 KEY_DIR="${ROOT_DIR}/.test_ncu_telemetry"
 
-SEED_PORT="${NEXUS_SEED_PORT:-50331}"
-HONEST_PORT="${NEXUS_HONEST_PORT:-50334}"
+SEED_PORT="50001"
+HONEST_PORT="50002"
 
 SEED_LOG="${ROOT_DIR}/.test_ncu_seed.log"
 HONEST_LOG="${ROOT_DIR}/.test_ncu_honest.log"
@@ -68,14 +68,13 @@ trap cleanup EXIT
 echo "[ncu-test] starting Node A (Seed) on tcp/${SEED_PORT}..."
 (
   cd "${CORE_DIR}"
-  export NEXUS_MODE="SEED"
-  export NEXUS_SEED_PORT="${SEED_PORT}"
-  export NEXUS_ENABLE_REST="0"
-  export NEXUS_DISABLE_REPL="1"
-  export NEXUS_MOCK_INFERENCE="1"
-  export NEXUS_P2P_KEY_PATH="${KEY_DIR}/p2p_seed.bin"
-  export NEXUS_NODE_KEY_PATH="${KEY_DIR}/node_key_seed.bin"
-  cargo run --release -q
+  cargo run --release -q -- \
+    --mode seed \
+    --port "${SEED_PORT}" \
+    --rest=false \
+    --mock-inference \
+    --p2p-key-path "${KEY_DIR}/p2p_seed.bin" \
+    --node-key-path "${KEY_DIR}/node_key_seed.bin"
 ) >"${SEED_LOG}" 2>&1 &
 SEED_PID=$!
 
@@ -84,15 +83,13 @@ sleep 3
 echo "[ncu-test] starting Node B (Honest) on tcp/${HONEST_PORT}..."
 (
   cd "${CORE_DIR}"
-  export NEXUS_MODE="CLIENT"
-  export NEXUS_SEED_PORT="${SEED_PORT}"
-  export NEXUS_CLIENT_LISTEN_PORT="${HONEST_PORT}"
-  export NEXUS_ENABLE_REST="0"
-  export NEXUS_DISABLE_REPL="1"
-  export NEXUS_MOCK_INFERENCE="1"
-  export NEXUS_P2P_KEY_PATH="${KEY_DIR}/p2p_honest.bin"
-  export NEXUS_NODE_KEY_PATH="${KEY_DIR}/node_key_honest.bin"
-  cargo run --release -q
+  cargo run --release -q -- \
+    --mode client \
+    --port "${HONEST_PORT}" \
+    --rest=false \
+    --mock-inference \
+    --p2p-key-path "${KEY_DIR}/p2p_honest.bin" \
+    --node-key-path "${KEY_DIR}/node_key_honest.bin"
 ) >"${HONEST_LOG}" 2>&1 &
 HONEST_PID=$!
 
