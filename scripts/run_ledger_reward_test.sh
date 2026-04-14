@@ -5,6 +5,7 @@ set +m
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CORE_DIR="${ROOT_DIR}/nexus-core"
 KEY_DIR="${ROOT_DIR}/.test_ncu_telemetry"
+DB_DIR="${ROOT_DIR}/.nexus_db"
 
 SEED_PORT="50001"
 HONEST_PORT="50002"
@@ -23,6 +24,8 @@ need_cmd cargo
 need_cmd python3
 need_cmd lsof
 need_cmd grep
+
+rm -rf "${DB_DIR}"
 
 for f in "${KEY_DIR}/p2p_seed.bin" "${KEY_DIR}/node_key_seed.bin" "${KEY_DIR}/p2p_honest.bin" "${KEY_DIR}/node_key_honest.bin"; do
   if [[ ! -f "${f}" ]]; then
@@ -65,6 +68,7 @@ echo "[ledger-test] starting Node A (Seed) tcp/${SEED_PORT}..."
     --mock-inference \
     --telemetry-min 1 \
     --telemetry-max 1 \
+    --db-path "${DB_DIR}" \
     --p2p-key-path "${KEY_DIR}/p2p_seed.bin" \
     --node-key-path "${KEY_DIR}/node_key_seed.bin"
 ) >"${SEED_LOG}" 2>&1 &
@@ -82,6 +86,7 @@ echo "[ledger-test] starting Node B (Honest) tcp/${HONEST_PORT}..."
     --mock-inference \
     --telemetry-min 1 \
     --telemetry-max 1 \
+    --db-path "${DB_DIR}" \
     --p2p-key-path "${KEY_DIR}/p2p_honest.bin" \
     --node-key-path "${KEY_DIR}/node_key_honest.bin"
 ) >"${HONEST_LOG}" 2>&1 &
